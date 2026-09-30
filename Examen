@@ -1,0 +1,418 @@
+function cinematica_robot
+
+    % =========================================================
+    % CINEMATICA DIRECTA DE ROBOT DE 4 GDL
+    % =========================================================
+
+    % Crear ventana
+    fig = uifigure(...
+        'Name','Cinematica Directa - Robot 4 GDL',...
+        'Position',[100 100 1000 600]);
+
+
+    % =========================================================
+    % LONGITUDES
+    % =========================================================
+
+    uilabel(fig,...
+        'Position',[40 540 150 25],...
+        'Text','Longitudes',...
+        'FontWeight','bold');
+
+    uilabel(fig,...
+        'Position',[40 490 40 25],...
+        'Text','L1');
+
+    L1 = uieditfield(fig,'numeric',...
+        'Position',[100 490 100 25],...
+        'Value',1);
+
+
+    uilabel(fig,...
+        'Position',[40 440 40 25],...
+        'Text','L2');
+
+    L2 = uieditfield(fig,'numeric',...
+        'Position',[100 440 100 25],...
+        'Value',2);
+
+
+    uilabel(fig,...
+        'Position',[40 390 40 25],...
+        'Text','L3');
+
+    L3 = uieditfield(fig,'numeric',...
+        'Position',[100 390 100 25],...
+        'Value',2);
+
+
+    uilabel(fig,...
+        'Position',[40 340 40 25],...
+        'Text','L4');
+
+    L4 = uieditfield(fig,'numeric',...
+        'Position',[100 340 100 25],...
+        'Value',1);
+
+
+    % =========================================================
+    % ANGULOS
+    % =========================================================
+
+    uilabel(fig,...
+        'Position',[240 540 150 25],...
+        'Text','Angulos (grados)',...
+        'FontWeight','bold');
+
+
+    uilabel(fig,...
+        'Position',[240 490 60 25],...
+        'Text','Theta1');
+
+    T1 = uieditfield(fig,'numeric',...
+        'Position',[310 490 100 25],...
+        'Value',30);
+
+
+    uilabel(fig,...
+        'Position',[240 440 60 25],...
+        'Text','Theta2');
+
+    T2 = uieditfield(fig,'numeric',...
+        'Position',[310 440 100 25],...
+        'Value',30);
+
+
+    uilabel(fig,...
+        'Position',[240 390 60 25],...
+        'Text','Theta3');
+
+    T3 = uieditfield(fig,'numeric',...
+        'Position',[310 390 100 25],...
+        'Value',20);
+
+
+    uilabel(fig,...
+        'Position',[240 340 60 25],...
+        'Text','Theta4');
+
+    T4 = uieditfield(fig,'numeric',...
+        'Position',[310 340 100 25],...
+        'Value',10);
+
+
+    % =========================================================
+    % SELECCION DEL METODO
+    % =========================================================
+
+    grupo = uibuttongroup(fig,...
+        'Position',[40 210 370 100],...
+        'Title','Metodo de solucion');
+
+
+    rbGeom = uiradiobutton(grupo,...
+        'Position',[30 45 130 25],...
+        'Text','Geometrico',...
+        'Value',true);
+
+
+    uiradiobutton(grupo,...
+        'Position',[190 45 130 25],...
+        'Text','Matrices');
+
+
+    % =========================================================
+    % BOTON CALCULAR
+    % =========================================================
+
+    uibutton(fig,'push',...
+        'Text','CALCULAR',...
+        'Position',[120 155 200 40],...
+        'ButtonPushedFcn',@calcular);
+
+
+    % =========================================================
+    % CUADRO DE RESULTADOS
+    % =========================================================
+
+    resultado = uitextarea(fig,...
+        'Position',[40 30 370 105],...
+        'Editable','off');
+
+
+    % =========================================================
+    % AREA PARA GRAFICAR EL ROBOT
+    % =========================================================
+
+    ax = uiaxes(fig,...
+        'Position',[450 70 520 480]);
+
+    title(ax,'Configuracion del Robot');
+
+    xlabel(ax,'X');
+    ylabel(ax,'Y');
+    zlabel(ax,'Z');
+
+    grid(ax,'on');
+
+    view(ax,45,25);
+
+
+    % =========================================================
+    % FUNCION DEL BOTON CALCULAR
+    % =========================================================
+
+    function calcular(~,~)
+
+        % -----------------------------------------------------
+        % LEER LONGITUDES
+        % -----------------------------------------------------
+
+        l1 = L1.Value;
+        l2 = L2.Value;
+        l3 = L3.Value;
+        l4 = L4.Value;
+
+
+        % -----------------------------------------------------
+        % LEER ANGULOS
+        % -----------------------------------------------------
+
+        % Se convierten de grados a radianes
+
+        t1 = deg2rad(T1.Value);
+        t2 = deg2rad(T2.Value);
+        t3 = deg2rad(T3.Value);
+        t4 = deg2rad(T4.Value);
+
+
+        % =====================================================
+        % METODO GEOMETRICO
+        % =====================================================
+
+        if rbGeom.Value
+
+            % Distancia radial horizontal
+
+            r = l2*cos(t2) + ...
+                l3*cos(t2+t3) + ...
+                l4*cos(t2+t3+t4);
+
+
+            % Posicion X
+
+            EFx = r*cos(t1);
+
+
+            % Posicion Y
+
+            EFy = r*sin(t1);
+
+
+            % Posicion Z
+
+            EFz = l1 + ...
+                  l2*sin(t2) + ...
+                  l3*sin(t2+t3) + ...
+                  l4*sin(t2+t3+t4);
+
+
+            metodo = 'GEOMETRICO';
+
+
+        % =====================================================
+        % METODO CON MATRICES HOMOGENEAS
+        % =====================================================
+
+        else
+
+            % -------------------------------------------------
+            % MATRIZ T01
+            % Rotacion theta1 alrededor de Z
+            % Traslacion l1 en Z
+            % -------------------------------------------------
+
+            T01 = [cos(t1)  -sin(t1)   0   0;
+                   sin(t1)   cos(t1)   0   0;
+                   0         0         1   l1;
+                   0         0         0   1];
+
+
+            % -------------------------------------------------
+            % MATRIZ T12
+            % -------------------------------------------------
+
+            T12 = [cos(t2)   0   -sin(t2)   l2*cos(t2);
+                   0         1    0          0;
+                   sin(t2)   0    cos(t2)   l2*sin(t2);
+                   0         0    0          1];
+
+
+            % -------------------------------------------------
+            % MATRIZ T23
+            % -------------------------------------------------
+
+            T23 = [cos(t3)   0   -sin(t3)   l3*cos(t3);
+                   0         1    0          0;
+                   sin(t3)   0    cos(t3)   l3*sin(t3);
+                   0         0    0          1];
+
+
+            % -------------------------------------------------
+            % MATRIZ T34
+            % -------------------------------------------------
+
+            T34 = [cos(t4)   0   -sin(t4)   l4*cos(t4);
+                   0         1    0          0;
+                   sin(t4)   0    cos(t4)   l4*sin(t4);
+                   0         0    0          1];
+
+
+            % -------------------------------------------------
+            % MULTIPLICACION DE IZQUIERDA A DERECHA
+            % -------------------------------------------------
+
+            T04 = T01 * T12 * T23 * T34;
+
+
+            % -------------------------------------------------
+            % POSICION DEL EFECTOR FINAL
+            % -------------------------------------------------
+
+            EFx = T04(1,4);
+            EFy = T04(2,4);
+            EFz = T04(3,4);
+
+
+            metodo = 'MATRICES';
+
+        end
+
+
+        % =====================================================
+        % MOSTRAR RESULTADOS
+        % =====================================================
+
+        resultado.Value = {...
+            ['Metodo: ' metodo]
+            ['EFx = ' num2str(EFx,'%.4f')]
+            ['EFy = ' num2str(EFy,'%.4f')]
+            ['EFz = ' num2str(EFz,'%.4f')]
+            };
+
+
+        % =====================================================
+        % CALCULAR POSICION DE CADA ARTICULACION
+        % PARA PODER DIBUJAR EL ROBOT
+        % =====================================================
+
+        % -----------------------------------------------------
+        % PUNTO 0 - BASE
+        % -----------------------------------------------------
+
+        P0 = [0 0 0];
+
+
+        % -----------------------------------------------------
+        % PUNTO 1 - FINAL DE L1
+        % -----------------------------------------------------
+
+        P1 = [0 0 l1];
+
+
+        % -----------------------------------------------------
+        % PUNTO 2 - FINAL DE L2
+        % -----------------------------------------------------
+
+        r2 = l2*cos(t2);
+
+        z2 = l1 + l2*sin(t2);
+
+        P2 = [r2*cos(t1), ...
+              r2*sin(t1), ...
+              z2];
+
+
+        % -----------------------------------------------------
+        % PUNTO 3 - FINAL DE L3
+        % -----------------------------------------------------
+
+        r3 = l2*cos(t2) + ...
+             l3*cos(t2+t3);
+
+        z3 = l1 + ...
+             l2*sin(t2) + ...
+             l3*sin(t2+t3);
+
+        P3 = [r3*cos(t1), ...
+              r3*sin(t1), ...
+              z3];
+
+
+        % -----------------------------------------------------
+        % PUNTO 4 - EFECTOR FINAL
+        % -----------------------------------------------------
+
+        P4 = [EFx EFy EFz];
+
+
+        % =====================================================
+        % PREPARAR DATOS PARA LA GRAFICA
+        % =====================================================
+
+        X = [P0(1) P1(1) P2(1) P3(1) P4(1)];
+
+        Y = [P0(2) P1(2) P2(2) P3(2) P4(2)];
+
+        Z = [P0(3) P1(3) P2(3) P3(3) P4(3)];
+
+
+        % =====================================================
+        % DIBUJAR ROBOT
+        % =====================================================
+
+        cla(ax);
+
+
+        plot3(ax,X,Y,Z,...
+            '-o',...
+            'LineWidth',3,...
+            'MarkerSize',9,...
+            'MarkerFaceColor','auto');
+
+
+        % Mantener grafica activa
+
+        grid(ax,'on');
+
+        xlabel(ax,'X');
+        ylabel(ax,'Y');
+        zlabel(ax,'Z');
+
+        title(ax,['Robot - Metodo ' metodo]);
+
+
+        % Vista tridimensional
+
+        view(ax,45,25);
+
+
+        % Ejes con la misma escala
+
+        axis(ax,'equal');
+
+
+        % Limites automaticos
+
+        xlim(ax,'auto');
+        ylim(ax,'auto');
+        zlim(ax,'auto');
+
+
+        % Actualizar grafica
+
+        drawnow;
+
+    end
+
+end
